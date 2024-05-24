@@ -12,7 +12,6 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Component;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Component
 public class Principal {
@@ -46,70 +45,35 @@ public class Principal {
                     """;
             System.out.println(menu);
             opcion = sc.nextInt();
-            sc.nextLine();
+            sc.nextLine(); // Consumir el carácter de nueva línea
 
             switch (opcion) {
                 case 1:
                     buscarSerieWeb();
                     break;
+
                 case 2:
                     listarLibros();
                     break;
                 case 3:
+                    listarPorAutoresRegistrados();
                     break;
                 case 4:
+                    listarAutoresVivos();
                     break;
                 case 5:
+                    listarPorIdioma();
                     break;
                 case 0:
                     System.out.println("Cerrando la sesión");
                     break;
                 default:
                     System.out.println("Opción invalida elija una opción valida :)");
-
             }
         }
-
-        String json = consumoApi.obtenerDatos(URL_BASE);
-        System.out.println(json);
-        var datos = conversor.obtenerDatos(json, Datos.class);
-        System.out.println(datos);
-
-        //top 10 libros mas descargados
-        System.out.println("top 10 libros mas descargados");
-        datos.resultados().stream()
-                .sorted(Comparator.comparing(DatosLibros::numeroDeDescargas).reversed())
-                .limit(10)
-                .map(libro -> libro.titulo().toUpperCase())
-                .forEach(System.out::println);
-
-        //busqueda de libros por nombre
-
-        System.out.print("Ingrese el nombre del libro que desea buscar: ");
-        String tituloLibro = sc.nextLine();
-        json = consumoApi.obtenerDatos(URL_BASE + "?search=" + tituloLibro.replace(" ", "+"));
-        var datosBusqueda = conversor.obtenerDatos(json, Datos.class);
-        Optional<DatosLibros> librosBuscado = datosBusqueda.resultados().stream()
-                .filter(l -> l.titulo().toUpperCase().contains(tituloLibro.toUpperCase()))
-                .findFirst();
-        if (librosBuscado.isPresent()) {
-            System.out.println("libro encontrado");
-            System.out.println(librosBuscado.get());
-        } else {
-            System.out.println("libro no encontrado");
-        }
-
-
-        //trabajando con estadisticas
-        DoubleSummaryStatistics est = datos.resultados().stream()
-                .filter(d -> d.numeroDeDescargas() > 0)
-                .collect(Collectors.summarizingDouble(DatosLibros::numeroDeDescargas));
-        System.out.println("Cantidad media de descargas: " + est.getAverage());
-        System.out.println("Cantidad maxiama de descargas: " + est.getMax());
-        System.out.println("Cantidad mimina de descargas: " + est.getMin());
-        System.out.println("Cantidad de registrso evaluados para calcular las estadisticas: " + est.getCount());
-
     }
+
+
 
 
     public void buscarSerieWeb() {
@@ -147,4 +111,77 @@ public class Principal {
         List<Libro> libros = repositorioLibro.findAll();
         libros.forEach(System.out::println);
     }
-}
+
+    private void listarPorAutoresRegistrados() {
+            List<Autor> autores = repositoryAutor.findAll();
+        System.out.println("Resultados de busqueda: \n");
+            autores.forEach(System.out::println);
+
+    }
+
+    private void listarAutoresVivos() {
+    }
+
+    private void listarPorIdioma() {
+        idiomas();
+        System.out.println("Escriba el idioma que desea buscar (ejemplo = es ) : ");
+        String idiomaBuscado = sc.nextLine();
+        List<Libro> librosEnIdioma = repositorioLibro.listarPorIdioma(idiomaBuscado);
+            System.out.println();
+
+        System.out.println("Resultados de busqueda: ");
+        librosEnIdioma.forEach(System.out::println);
+    }
+
+    private void idiomas() {
+        String idiomas = """
+                es -> Español
+                en -> Ingles
+                fr -> Frances
+                """;
+        System.out.println(idiomas);
+    }
+
+}//cierre clase
+
+
+/**
+ * String json = consumoApi.obtenerDatos(URL_BASE);
+ * System.out.println(json);
+ * var datos = conversor.obtenerDatos(json, Datos.class);
+ * System.out.println(datos);
+ * <p>
+ * //top 10 libros mas descargados
+ * System.out.println("top 10 libros mas descargados");
+ * datos.resultados().stream()
+ * .sorted(Comparator.comparing(DatosLibros::numeroDeDescargas).reversed())
+ * .limit(10)
+ * .map(libro -> libro.titulo().toUpperCase())
+ * .forEach(System.out::println);
+ * <p>
+ * //busqueda de libros por nombre
+ * <p>
+ * System.out.print("Ingrese el nombre del libro que desea buscar: ");
+ * String tituloLibro = sc.nextLine();
+ * json = consumoApi.obtenerDatos(URL_BASE + "?search=" + tituloLibro.replace(" ", "+"));
+ * var datosBusqueda = conversor.obtenerDatos(json, Datos.class);
+ * Optional<DatosLibros> librosBuscado = datosBusqueda.resultados().stream()
+ * .filter(l -> l.titulo().toUpperCase().contains(tituloLibro.toUpperCase()))
+ * .findFirst();
+ * if (librosBuscado.isPresent()) {
+ * System.out.println("libro encontrado");
+ * System.out.println(librosBuscado.get());
+ * } else {
+ * System.out.println("libro no encontrado");
+ * }
+ * <p>
+ * <p>
+ * //trabajando con estadisticas
+ * DoubleSummaryStatistics est = datos.resultados().stream()
+ * .filter(d -> d.numeroDeDescargas() > 0)
+ * .collect(Collectors.summarizingDouble(DatosLibros::numeroDeDescargas));
+ * System.out.println("Cantidad media de descargas: " + est.getAverage());
+ * System.out.println("Cantidad maxiama de descargas: " + est.getMax());
+ * System.out.println("Cantidad mimina de descargas: " + est.getMin());
+ * System.out.println("Cantidad de registrso evaluados para calcular las estadisticas: " + est.getCount());
+ */
