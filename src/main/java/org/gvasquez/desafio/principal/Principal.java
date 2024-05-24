@@ -1,17 +1,17 @@
 package org.gvasquez.desafio.principal;
 
+import org.gvasquez.desafio.model.Autor;
 import org.gvasquez.desafio.model.Datos;
 import org.gvasquez.desafio.model.DatosLibros;
+import org.gvasquez.desafio.model.Libro;
+import org.gvasquez.desafio.repository.AutorRepository;
+import org.gvasquez.desafio.repository.LibrosRepository;
 import org.gvasquez.desafio.service.ConsumoApi;
-import org.gvasquez.desafio.service.Conviertedatos;
-import org.gvasquez.desafio.service.IConvierteDatos;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.gvasquez.desafio.service.ConvierteDatos;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Component;
 
-import java.util.Comparator;
-import java.util.DoubleSummaryStatistics;
-import java.util.Optional;
-import java.util.Scanner;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Component
@@ -20,13 +20,20 @@ public class Principal {
     private static final String URL_BASE = "https://gutendex.com/books/";
 
     private ConsumoApi consumoApi = new ConsumoApi();
-    private Conviertedatos conversor = new Conviertedatos();
+    private ConvierteDatos conversor = new ConvierteDatos();
     private Scanner sc = new Scanner(System.in);
+    private LibrosRepository repositorioLibro;
+    private AutorRepository repositoryAutor;
+
+    public Principal(LibrosRepository repository, AutorRepository repositoryAutor) {
+        this.repositorioLibro = repository;
+        this.repositoryAutor = repositoryAutor;
+    }
 
 
     public void muestraMenu() {
 
-        /*int opcion = -1;
+        int opcion = -1;
         while (opcion != 0) {
             String menu = """
                     Elija la opción deseada
@@ -41,10 +48,12 @@ public class Principal {
             opcion = sc.nextInt();
             sc.nextLine();
 
-            switch (opcion){
+            switch (opcion) {
                 case 1:
+                    buscarSerieWeb();
                     break;
                 case 2:
+                    listarLibros();
                     break;
                 case 3:
                     break;
@@ -59,7 +68,7 @@ public class Principal {
                     System.out.println("Opción invalida elija una opción valida :)");
 
             }
-        }*/
+        }
 
         String json = consumoApi.obtenerDatos(URL_BASE);
         System.out.println(json);
@@ -75,6 +84,7 @@ public class Principal {
                 .forEach(System.out::println);
 
         //busqueda de libros por nombre
+
         System.out.print("Ingrese el nombre del libro que desea buscar: ");
         String tituloLibro = sc.nextLine();
         json = consumoApi.obtenerDatos(URL_BASE + "?search=" + tituloLibro.replace(" ", "+"));
@@ -89,6 +99,7 @@ public class Principal {
             System.out.println("libro no encontrado");
         }
 
+
         //trabajando con estadisticas
         DoubleSummaryStatistics est = datos.resultados().stream()
                 .filter(d -> d.numeroDeDescargas() > 0)
@@ -97,21 +108,43 @@ public class Principal {
         System.out.println("Cantidad maxiama de descargas: " + est.getMax());
         System.out.println("Cantidad mimina de descargas: " + est.getMin());
         System.out.println("Cantidad de registrso evaluados para calcular las estadisticas: " + est.getCount());
-        ;
-    }
 
-    private DatosLibros obtenerDatosSerie() {
-        System.out.println("Escribe el nombre del libro que desas buscar: ");
-        String nombreLibro = sc.nextLine();
-        String json = consumoApi.obtenerDatos(URL_BASE + "?search=" + nombreLibro.replace(" ", "+"));
-        System.out.println(json);
-        DatosLibros datos=conversor.obtenerDatos(json,DatosLibros.class);
-        return datos;
     }
 
 
-    private void buscarSerieWeb() {
-        DatosLibros libros=obtenerDatosSerie();
+    public void buscarSerieWeb() {
+        System.out.print("Ingrese el nombre del libro que desea buscar: ");
+        String libroSolicitado = sc.nextLine();
+        String json = consumoApi.obtenerDatos(URL_BASE + "?search=" + libroSolicitado.replace(" ", "+"));
+        Datos datos = conversor.obtenerDatos(json, Datos.class);
 
+        Optional<Libro> libroEncontrado = datos.resultados().stream()
+                .map(Libro::new)
+                .findFirst();
+
+        if (libroEncontrado.isPresent()) {
+            Autor autor = repositoryAutor.findByNombreContainsIgnoreCase(libroEncontrado.get().getAutor().getNombre());
+            if (autor == null) {
+                Autor nuevoAutor = libroEncontrado.get().getAutor();
+                autor = repositoryAutor.save(nuevoAutor);
+            }
+            Libro libro = libroEncontrado.get();
+            try {
+                libro.setAutor(autor);
+                repositorioLibro.save(libro);
+                System.out.println(libro);
+            } catch (DataIntegrityViolationException ex) {
+                // Manejar la excepción de restricción única
+                System.out.println("El libro ya existe en la base de datos.");
+            }
+        } else {
+            System.out.println("No se encontró el libro buscado.");
+
+        }
+    }
+
+    public void listarLibros() {
+        List<Libro> libros = repositorioLibro.findAll();
+        libros.forEach(System.out::println);
     }
 }

@@ -2,10 +2,9 @@ package org.gvasquez.desafio.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.springframework.stereotype.Service;
 
 
-public class Conviertedatos implements IConvierteDatos {
+public class ConvierteDatos implements IConvierteDatos {
 
     private ObjectMapper objectMapper = new ObjectMapper();
 
