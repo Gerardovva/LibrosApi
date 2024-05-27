@@ -2,7 +2,6 @@ package org.gvasquez.desafio.principal;
 
 import org.gvasquez.desafio.model.Autor;
 import org.gvasquez.desafio.model.Datos;
-import org.gvasquez.desafio.model.DatosLibros;
 import org.gvasquez.desafio.model.Libro;
 import org.gvasquez.desafio.repository.AutorRepository;
 import org.gvasquez.desafio.repository.LibrosRepository;
@@ -34,7 +33,7 @@ public class Principal {
 
         int opcion = -1;
         while (opcion != 0) {
-            String menu = """
+            var menu = """
                     Elija la opción deseada
                     1.- Buscar por titulo
                     2.- Listar libros registrados

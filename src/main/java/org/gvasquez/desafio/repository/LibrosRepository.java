@@ -8,8 +8,13 @@ import java.util.List;
 
 public interface LibrosRepository extends JpaRepository<Libro,Long> {
 
-   @Query("select l from Libro l where idiomas = :idioma")
-   List<Libro> listarPorIdioma(String idioma);
+
+
+      @Query("SELECT l FROM Libro l WHERE l.idiomas = :idioma")
+      List<Libro> listarPorIdioma(String idioma);
+
+      @Query("SELECT l FROM Libro l")
+      List<Libro> todosLosLibros();
 
 
 }

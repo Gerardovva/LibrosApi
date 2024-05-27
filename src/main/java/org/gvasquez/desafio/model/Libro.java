@@ -1,5 +1,6 @@
 package org.gvasquez.desafio.model;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 
 import java.util.List;
@@ -16,12 +17,16 @@ public class Libro {
     private String idiomas;
     private Double numeroDeDescargas;
     //@Transient
-    @ManyToOne
-    @JoinColumn(name = "autor_id",nullable = false)
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "autor_id", nullable = false)
+    @JsonBackReference// Indica a Jackson que debe omitir la serialización de este campo para evitar la recursión infinita
     private Autor autor;
+
+
 
     public Libro() {
     }
+
     public Libro(DatosLibros datosLibros){
         this.titulo=datosLibros.titulo();
         this.idiomas= datosLibros.idiomas().get(0);
